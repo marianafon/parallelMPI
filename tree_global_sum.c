@@ -2,15 +2,16 @@
 #include <stdlib.h>
 #include <mpi.h>
 
-void Read_n(int* n, int* local_n, int my_rank, int comm_sz, int* local_a, int* local_b, MPI_Comm comm);
+void Read_n(int* n, int* local_n, int my_rank, int comm_sz, MPI_Comm comm);
 void Allocate_vectors(int** local_vector_a, int local_n, MPI_Comm comm);
 void Read_vector(int vector_a[], int local_n, int n, int my_rank, MPI_Comm comm);
 void Print_vector(int local_vector_a[], int local_n, int n, char title[], int my_rank, MPI_Comm comm);
 void My_MPI_Reduce(int comm_sz, int my_rank, int local_sum, int* result, MPI_Comm comm);
 
 int main(void) {
-   int n = 0, local_n = 0, local_sum = 0, total_sum = 0, result = 0, comm_sz = 0, my_rank = 0, local_a = 0, local_b = 0;
+   int n = 0, local_n = 0, local_sum = 0, total_sum = 0, result = 0, comm_sz = 0, my_rank = 0;
    int* local_vector_a; 
+   double local_timeReduce = 0, local_timeMyReduce = 0, timeReduce = 0, timeMyReduce = 0;
    MPI_Comm comm;
    
    /* Start up MPI */
@@ -25,7 +26,7 @@ int main(void) {
     * Lê n (tem que ser potência de 2) e calcula local_n
     * a serem somados pelo core my_rank
     */
-   Read_n(&n, &local_n, my_rank, comm_sz, &local_a, &local_b, comm);
+   Read_n(&n, &local_n, my_rank, comm_sz, comm);
    /* 
     * Envia em broadcast os valores que são necessários a todos os processos
     */
@@ -51,15 +52,24 @@ int main(void) {
    /*
     *Adiciona todas as somas locais ao result com destino ao processo 0
     */
+   local_timeReduce = MPI_Wtime();
    MPI_Reduce(&local_sum, &result, 1, MPI_INT, MPI_SUM, 0, comm);
-   My_MPI_Reduce(comm_sz, my_rank, local_sum, &total_sum, comm);
+   local_timeReduce = MPI_Wtime() - local_timeReduce;
 
-   MPI_Barrier(comm);
+   local_timeMyReduce = MPI_Wtime();
+   My_MPI_Reduce(comm_sz, my_rank, local_sum, &total_sum, comm);
+   local_timeMyReduce = MPI_Wtime() - local_timeMyReduce;
+
+
+   MPI_Reduce(&local_timeReduce, &timeReduce, 1, MPI_DOUBLE, MPI_SUM, 0, comm);
+   MPI_Reduce(&local_timeMyReduce, &timeMyReduce, 1, MPI_DOUBLE, MPI_SUM, 0, comm);
+   //MPI_Barrier(comm);
    /*
     *Imprime o resultado e libera a memória utilizada
     */
    if(my_rank == 0){
       printf("Result: %d | Total sum: %d\n",result, total_sum);
+      printf("Reduce time: %f | MyReduce time: %f\n", timeReduce, timeMyReduce);
       free(local_vector_a);
    }
 
@@ -71,7 +81,7 @@ int main(void) {
 
 //---------------------------Functions------------------------------
 
-void Read_n(int* n, int* local_n, int my_rank, int comm_sz, int* local_a, int* local_b, MPI_Comm comm)
+void Read_n(int* n, int* local_n, int my_rank, int comm_sz, MPI_Comm comm)
 {
    if (my_rank == 0) {
       printf("Qual o tamanho dos vetores?\n");
@@ -81,11 +91,6 @@ void Read_n(int* n, int* local_n, int my_rank, int comm_sz, int* local_a, int* l
 
       if(my_rank < resto){
          *local_n += *local_n;
-         *local_a = my_rank * (*local_n);      
-         *local_b = *local_a + (*local_n);
-      }else{
-         *local_a = my_rank * (*local_n) + (resto);
-         *local_b = *local_a + (*local_n);
       }
    }   
 }
