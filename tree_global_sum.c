@@ -63,7 +63,6 @@ int main(void) {
 
    MPI_Reduce(&local_timeReduce, &timeReduce, 1, MPI_DOUBLE, MPI_SUM, 0, comm);
    MPI_Reduce(&local_timeMyReduce, &timeMyReduce, 1, MPI_DOUBLE, MPI_SUM, 0, comm);
-   //MPI_Barrier(comm);
    /*
     *Imprime o resultado e libera a memória utilizada
     */
@@ -109,15 +108,18 @@ void Read_vector(int local_vector_a[], int local_n, int n, int my_rank, MPI_Comm
    if(my_rank == 0){
       vector_a = malloc(n*sizeof(int));
 
+      //Recebe vetor do usuário
       /*
       printf("Defina o vetor (%d posições)\n", n);
       for(i=0;i<n;i++)
          scanf("%d", &vector_a[i]);
       */
 
+      //Define valor padrão pra cada posição do vetor
       for(i=0;i<n;i++)
          vector_a[i] = i * 10;
 
+     //Mostra vetor na tela
      /*
      for(i=0;i<n;i++)
      {
