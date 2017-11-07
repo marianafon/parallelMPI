@@ -109,10 +109,24 @@ void Read_vector(int local_vector_a[], int local_n, int n, int my_rank, MPI_Comm
    if(my_rank == 0){
       vector_a = malloc(n*sizeof(int));
 
+      /*
       printf("Defina o vetor (%d posições)\n", n);
       for(i=0;i<n;i++)
          scanf("%d", &vector_a[i]);
-      
+      */
+
+      for(i=0;i<n;i++)
+         vector_a[i] = i * 10;
+
+     /*
+     for(i=0;i<n;i++)
+     {
+  	   printf("| %d | ", vector_a[i]);
+  	   if(i%10 == 0)
+   		printf("\n");
+     }
+     */
+            
       MPI_Scatter(vector_a, local_n, MPI_INT, 
             local_vector_a, local_n, MPI_INT, 0, comm);
       
@@ -142,8 +156,8 @@ void My_MPI_Reduce(int comm_sz, int my_rank, int local_sum, int* result, MPI_Com
                comm, MPI_STATUS_IGNORE);
             total_sum += local_sum;
 
-            printf("Sou o core %d, RECEBI %d do core %d\n",
-                  my_rank, local_sum, from);   
+            //printf("Sou o core %d, RECEBI %d do core %d\n",
+            //    my_rank, local_sum, from);   
          }
       }else{
          //Envia soma para o core (my_rank - core_difference)
@@ -152,8 +166,8 @@ void My_MPI_Reduce(int comm_sz, int my_rank, int local_sum, int* result, MPI_Com
          MPI_Send(&total_sum, 1, MPI_INT, to, 0, 
             comm);          
 
-         printf("Sou o core %d, ENVIEI %d ao core %d\n",
-               my_rank, total_sum, to);
+         //printf("Sou o core %d, ENVIEI %d ao core %d\n",
+         //    my_rank, total_sum, to);
          break;
       }
       divisor *= 2;
